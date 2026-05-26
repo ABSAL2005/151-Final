@@ -15,6 +15,8 @@ public class OSCController : MonoBehaviour
         playerController = FindObjectOfType<PlayerCharacterController>();
         weaponsManager = FindObjectOfType<PlayerWeaponsManager>();
         inputHandler = FindObjectOfType<PlayerInputHandler>();
+
+        Send("/music", 1);
     }
 
     void Update()
