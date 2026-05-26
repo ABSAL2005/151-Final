@@ -46,4 +46,4 @@ public class OSCController : MonoBehaviour
         msg.AddValue(OSCValue.Int(value));
         transmitter.Send(msg);
     }
-}
+}  
