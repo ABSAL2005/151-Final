@@ -1,4 +1,5 @@
-﻿using Unity.FPS.Game;
+﻿using extOSC;
+using Unity.FPS.Game;
 using UnityEngine;
 
 namespace Unity.FPS.Gameplay
@@ -15,6 +16,13 @@ namespace Unity.FPS.Gameplay
             {
                 playerHealth.Heal(HealAmount);
                 PlayPickupFeedback();
+                OSCTransmitter transmitter = FindObjectOfType<OSCTransmitter>();
+                if (transmitter != null)
+                {
+                    OSCMessage msg = new OSCMessage("/health");
+                    msg.AddValue(OSCValue.Int(1));
+                    transmitter.Send(msg);
+                }
                 Destroy(gameObject);
             }
         }
