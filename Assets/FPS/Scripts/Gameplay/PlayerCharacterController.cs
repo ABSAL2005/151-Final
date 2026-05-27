@@ -97,6 +97,7 @@ namespace Unity.FPS.Gameplay
         public float FallDamageAtMaxSpeed = 50f;
 
         public UnityAction<bool> OnStanceChanged;
+        public UnityAction OnWallHit;
 
         public Vector3 CharacterVelocity { get; set; }
         public bool IsGrounded { get; private set; }
@@ -383,6 +384,7 @@ namespace Unity.FPS.Gameplay
                 m_LatestImpactSpeed = CharacterVelocity;
 
                 CharacterVelocity = Vector3.ProjectOnPlane(CharacterVelocity, hit.normal);
+                OnWallHit?.Invoke(); // add this
             }
         }
 

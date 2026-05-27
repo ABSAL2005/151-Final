@@ -19,7 +19,7 @@ namespace Unity.FPS.Gameplay
                 OSCTransmitter transmitter = FindObjectOfType<OSCTransmitter>();
                 if (transmitter != null)
                 {
-                    OSCMessage msg = new OSCMessage("/health");
+                    OSCMessage msg = new OSCMessage("/pickup");
                     msg.AddValue(OSCValue.Int(1));
                     transmitter.Send(msg);
                 }
