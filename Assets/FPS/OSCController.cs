@@ -15,14 +15,15 @@ public class OSCController : MonoBehaviour
     private float footstepCooldown = 0f;
     private float wallCooldown = 0f;
     private EnemyController[] enemies;
+    private DetectionModule[] detectionModules;
     private Health playerHealth;
+    private bool bossMusicSent = false;
 
     void Start()
     {
         playerController = FindObjectOfType<PlayerCharacterController>();
         weaponsManager = FindObjectOfType<PlayerWeaponsManager>();
         inputHandler = FindObjectOfType<PlayerInputHandler>();
-        FindObjectOfType<BossRoomTrigger>().OnPlayerEnter.AddListener(() => Send("/bossroom", 1));
 
         EventManager.AddListener<PickupEvent>(OnPickup);
         EventManager.AddListener<EnemyKillEvent>(OnEnemyKill);
@@ -33,11 +34,23 @@ public class OSCController : MonoBehaviour
         {
             enemy.onAttack += () => Send("/enemyshot", 1);
         }
+        
+        detectionModules = FindObjectsOfType<DetectionModule>();
+        foreach (var dm in detectionModules)
+        {
+            dm.onDetectedTarget += () => Send("/enemydetect", 1);
+            dm.onLostTarget += () => Send("/enemydetect", 0);
+        }
 
         playerHealth = playerController.GetComponent<Health>();
         playerHealth.OnDamaged += OnPlayerDamaged;
         playerController.OnWallHit += OnWallHit;
 
+        Invoke(nameof(SendMusic), 1f);  // wait 1s for Pd to be ready
+    }
+
+    void SendMusic()
+    {
         Send("/music", 1);
     }
 
@@ -87,7 +100,11 @@ public class OSCController : MonoBehaviour
         }
     }
 
-    void OnPickup(PickupEvent evt) => Send("/pickup", 1);
+    void OnPickup(PickupEvent evt)
+    {
+        if (evt.Pickup.GetComponent<HealthPickup>() == null)
+            Send("/pickup", 1);
+    }
     void OnEnemyKill(EnemyKillEvent evt) => Send("/enemydestroy", 1);
     void OnPlayerDeath(PlayerDeathEvent evt) => Send("/playerdeath", 1);
     void OnPlayerDamaged(float damage, GameObject source) => Send("/damage", 1);
@@ -97,6 +114,20 @@ public class OSCController : MonoBehaviour
         {
             Send("/wall", 1);
             wallCooldown = 0.3f;
+        }
+    }
+    void OnApplicationQuit()
+    {
+        Send("/music", 0);
+        Send("/bossmusic", 0);
+    }
+
+    public void SendBossMusic()
+    {
+        if (!bossMusicSent)
+        {
+            Send("/bossmusic", 1);
+            bossMusicSent = true;
         }
     }
 
