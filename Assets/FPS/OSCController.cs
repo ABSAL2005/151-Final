@@ -3,6 +3,7 @@ using Unity.FPS.AI;
 using Unity.FPS.Game;
 using Unity.FPS.Gameplay;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Events;
 
 public class OSCController : MonoBehaviour
@@ -44,14 +45,16 @@ public class OSCController : MonoBehaviour
 
         playerHealth = playerController.GetComponent<Health>();
         playerHealth.OnDamaged += OnPlayerDamaged;
+        playerHealth.OnHealed += OnPlayerHealed;
         playerController.OnWallHit += OnWallHit;
 
-        Invoke(nameof(SendMusic), 1f);  // wait 1s for Pd to be ready
+        Invoke(nameof(SendMusic), 0.5f);  // wait 0.5s for Pd to be ready
     }
 
     void SendMusic()
     {
         Send("/music", 1);
+        Send("/music2", 1);
     }
 
     void OnDestroy()
@@ -59,8 +62,9 @@ public class OSCController : MonoBehaviour
         EventManager.RemoveListener<PickupEvent>(OnPickup);
         EventManager.RemoveListener<EnemyKillEvent>(OnEnemyKill);
         EventManager.RemoveListener<PlayerDeathEvent>(OnPlayerDeath);
-        playerHealth.OnDamaged -= OnPlayerDamaged;
         playerController.OnWallHit -= OnWallHit;
+        playerHealth.OnDamaged -= OnPlayerDamaged; 
+        playerHealth.OnHealed -= OnPlayerHealed;    
     }
 
     void Update()
@@ -107,7 +111,12 @@ public class OSCController : MonoBehaviour
     }
     void OnEnemyKill(EnemyKillEvent evt) => Send("/enemydestroy", 1);
     void OnPlayerDeath(PlayerDeathEvent evt) => Send("/playerdeath", 1);
-    void OnPlayerDamaged(float damage, GameObject source) => Send("/damage", 1);
+    void OnPlayerHealed(float amount) => UpdateTempo();
+    void OnPlayerDamaged(float damage, GameObject source)
+    {
+        Send("/damage", 1);
+        UpdateTempo();
+    }
     void OnWallHit()
     {
         if (wallCooldown <= 0f)
@@ -116,7 +125,25 @@ public class OSCController : MonoBehaviour
             wallCooldown = 0.3f;
         }
     }
+
     void OnApplicationQuit()
+    {
+        Send("/music", 0);
+        Send("/music2", 0);
+        Send("/bossmusic", 0);
+    }
+
+    void OnEnable()
+    {
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
+    }
+
+    void OnDisable()
+    {
+        SceneManager.sceneUnloaded -= OnSceneUnloaded;
+    }
+
+    void OnSceneUnloaded(Scene scene)
     {
         Send("/music", 0);
         Send("/bossmusic", 0);
@@ -127,8 +154,17 @@ public class OSCController : MonoBehaviour
         if (!bossMusicSent)
         {
             Send("/bossmusic", 1);
+            Send("/music3", 1);
             bossMusicSent = true;
         }
+    }
+
+    void UpdateTempo()
+    {
+        if (playerHealth.GetRatio() <= 0.5f)
+            Send("/lowhealth", 1);
+        else
+            Send("/highhealth", 1);
     }
 
     private void Send(string address, int value)
